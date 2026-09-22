@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>POP — Mindful Sensory Release</title>
+
+  <!-- PixiJS v7 CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #070b19;
+      --bg-mid: #0b132b;
+      --bg-light: #1c2541;
+      --accent-teal: #6fffe9;
+      --accent-cyan: #3a86ff;
+      --accent-purple: #7209b7;
+      --accent-rose: #f72585;
+      --glass-bg: rgba(15, 23, 42, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --glass-glow: rgba(111, 255, 233, 0.25);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+    }
+
+    /* Multi-layered CSS Animated Aurora Ambient Background */
+    .aurora-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, #1c2541 0%, #0b132b 60%, #070b19 100%);
+    }
+
+    .aurora-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      animation: floatOrb 20s infinite alternate ease-in-out;
+    }
+
+    .orb-1 {
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, var(--accent-purple), transparent 70%);
+      top: -10vw;
+      left: -10vw;
+      animation-duration: 22s;
+    }
+
+    .orb-2 {
+      width: 45vw;
+      height: 45vw;
+      background: radial-gradient(circle, var(--accent-cyan), transparent 70%);
+      bottom: -10vw;
+      right: -5vw;
+      animation-duration: 18s;
+      animation-delay: -5s;
+    }
+
+    .orb-3 {
+      width: 35vw;
+      height: 35vw;
+      background: radial-gradient(circle, var(--accent-teal), transparent 70%);
+      top: 40%;
+      left: 30%;
+      animation-duration: 25s;
+      animation-delay: -10s;
+    }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(60px, -40px) scale(1.15); }
+      100% { transform: translate(-40px, 50px) scale(0.9); }
+    }
+
+    /* Pixi Fullscreen Container */
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* UI Layout Overlay */
+    .ui-layer {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      pointer-events: none;
+    }
+
+    .ui-card, .btn-action, .input-dump, .btn-corner, .audio-toggle {
+      pointer-events: auto;
+    }
+
+    /* Frosted Glass Card with Shimmering Metallic Border */
+    .ui-card {
+      position: relative;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-radius: 32px;
+      padding: 44px;
+      max-width: 580px;
+      width: 100%;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5),
+                  0 0 40px rgba(111, 255, 233, 0.1),
+                  inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  filter 0.7s ease;
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0px);
+    }
+
+    /* Animated Border Gradient Glow Overlay */
+    .ui-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 33px;
+      padding: 1.5px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(111,255,233,0.5), rgba(114,9,183,0.3), rgba(255,255,255,0.1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .ui-card.hidden {
+      opacity: 0;
+      transform: scale(0.85) translateY(30px);
+      filter: blur(12px);
+      pointer-events: none;
+    }
+
+    /* Branding Typography */
+    .brand {
+      text-align: center;
+    }
+
+    .brand-title {
+      font-size: 3.6rem;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 10%, var(--accent-teal) 50%, #e2e8f0 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px var(--glass-glow));
+      margin-left: 0.22em; /* offset letter-spacing balance */
+      margin-bottom: 6px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.98rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* Textarea Box */
+    .input-wrapper {
+      width: 100%;
+      position: relative;
+    }
+
+    .input-dump {
+      width: 100%;
+      height: 160px;
+      background: rgba(7, 11, 25, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 300;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: text;
+      -webkit-user-select: text;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .input-dump::placeholder {
+      color: rgba(148, 163, 184, 0.5);
+      font-weight: 300;
+    }
+
+    .input-dump:focus {
+      border-color: var(--accent-teal);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4),
+                  0 0 20px rgba(111, 255, 233, 0.25);
+    }
+
+    /* Main CTA Release Button */
+    .btn-action {
+      position: relative;
+      background: linear-gradient(135deg, var(--accent-teal) 0%, #3a86ff 50%, var(--accent-purple) 100%);
+      background-size: 200% 200%;
+      border: none;
+      color: #070b19;
+      padding: 18px 42px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 0.08em;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(111, 255, 233, 0.35);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 15px 40px rgba(111, 255, 233, 0.5);
+      background-position: 100% 0;
+      color: #ffffff;
+    }
+
+    .btn-action:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    /* Corner Buttons */
+    .top-bar {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      left: 24px;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .btn-corner {
+      pointer-events: auto;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      opacity: 0;
+      transform: translateY(-15px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-corner.visible {
+      opacity: 0.85;
+      transform: translateY(0);
+    }
+
+    .btn-corner.visible:hover {
+      opacity: 1;
+      color: #ffffff;
+      border-color: var(--accent-teal);
+      box-shadow: 0 0 20px rgba(111, 255, 233, 0.3);
+    }
+
+    .audio-toggle {
+      pointer-events: auto;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .audio-toggle:hover {
+      color: var(--accent-teal);
+      border-color: var(--accent-teal);
+    }
+
+    /* Hint Bar */
+    .hint-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 12px 28px;
+      border-radius: 40px;
+      font-size: 0.88rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 15;
+      white-space: nowrap;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .hint-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Mobile Responsive Tweaks */
+    @media (max-width: 600px) {
+      .ui-card {
+        padding: 30px 22px;
+        border-radius: 24px;
+      }
+
+      .brand-title {
+        font-size: 2.8rem;
+      }
+
+      .input-dump {
+        height: 130px;
+        font-size: 0.95rem;
+      }
+
+      .btn-action {
+        padding: 16px 28px;
+        font-size: 1rem;
+      }
+
+      .hint-toast {
+        font-size: 0.78rem;
+        padding: 10px 18px;
+        width: 90%;
+        text-align: center;
+        white-space: normal;
+      }
+
+      .top-bar {
+        top: 16px;
+        right: 16px;
+        left: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated CSS Ambient Aurora Background -->
+  <div class="aurora-bg">
+    <div class="aurora-orb orb-1"></div>
+    <div class="aurora-orb orb-2"></div>
+    <div class="aurora-orb orb-3"></div>
+  </div>
+
+  <!-- Background Pixi Render Canvas -->
+  <div id="canvas-container"></div>
+
+  <!-- Top Bar Controls -->
+  <div class="top-bar">
+    <button id="audio-toggle" class="audio-toggle" title="Toggle Sound Chimes">
+      <svg id="sound-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      </svg>
+    </button>
+    <button id="reset-btn" class="btn-corner">Dump More Thoughts</button>
+  </div>
+
+  <!-- Foreground Glass UI Overlay -->
+  <div class="ui-layer">
+    <div id="ui-card" class="ui-card">
+      <div class="brand">
+        <h1 class="brand-title">POP</h1>
+        <p class="brand-subtitle">Transform chaos into calm, one pop at a time.</p>
+      </div>
+
+      <div class="input-wrapper">
+        <textarea 
+          id="thought-input" 
+          class="input-dump" 
+          placeholder="Type everything jumbling your mind right now..."
+          autofocus></textarea>
+      </div>
+
+      <button id="release-btn" class="btn-action">RELEASE & RELAX</button>
+    </div>
+  </div>
+
+  <!-- Bottom Hint Toast -->
+  <div id="hint-toast" class="hint-toast">✨ Swipe through bubbles to push them • Tap to pop into pure light</div>
+
+  <audio id="ambient-track" src="Breathing_Room.mp3" loop preload="auto"></audio>
+
+  <script>
+    // --- Web Audio Synthesizer for Pentatonic Harmonic Chimes ---
+    class ChimeSynthesizer {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        // Pentatonic C Major scale frequencies for serene harmonious soundscape
+        this.scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Pop Chime Effect with Dual Harmonic Oscillators
+      playPopChime() {
+        if (this.muted || !this.ctx) return;
+        
+        try {
+          const freq = this.scale[Math.floor(Math.random() * this.scale.length)];
+          const now = this.ctx.currentTime;
+
+          // Fundamental Sine Oscillator
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc1.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.12);
+
+          gain1.gain.setValueAtTime(0.25, now);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+          // Harmonic Overtone
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(freq * 2, now);
+
+          gain2.gain.setValueAtTime(0.08, now);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+          osc1.connect(gain1);
+          osc2.connect(gain2);
+          gain1.connect(this.ctx.destination);
+          gain2.connect(this.ctx.destination);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.35);
+          osc2.stop(now + 0.25);
+        } catch(e) {}
+      }
+
+      // Ambient Swell on Thought Release
+      playReleaseSwell() {
+        if (this.muted || !this.ctx) return;
+
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(130.81, now); // C3
+          osc.frequency.exponentialRampToValueAtTime(261.63, now + 1.2); // Ramp to C4
+
+          gain.gain.setValueAtTime(0.01, now);
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.6);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 1.8);
+        } catch(e) {}
+      }
+    }
+
+    const audio = new ChimeSynthesizer();
+
+    // --- Application State & Elements ---
+    const container = document.getElementById('canvas-container');
+    const uiCard = document.getElementById('ui-card');
+    const thoughtInput = document.getElementById('thought-input');
+    const releaseBtn = document.getElementById('release-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const hintToast = document.getElementById('hint-toast');
+    const audioToggle = document.getElementById('audio-toggle');
+    const ambientTrack = document.getElementById('ambient-track');
+
+    let app;
+    const bubbles = [];
+    const particles = [];
+    const ripples = [];
+    const backgroundStars = [];
+
+    // Pointer Physics Tracking
+    const touchState = {
+      x: -1000,
+      y: -1000,
+      px: -1000,
+      py: -1000,
+      vx: 0,
+      vy: 0,
+      active: false
+    };
+
+    // Color Schematics for Iridescent Bubbles
+    const BUBBLE_PALETTES = [
+      { fill: 0x6fffe9, border: 0xa5f3fc, glow: 0x0284c7 }, // Electric Cyan
+      { fill: 0x3a86ff, border: 0x93c5fd, glow: 0x1d4ed8 }, // Azure Blue
+      { fill: 0x7209b7, border: 0xf0abfc, glow: 0x9333ea }, // Aurora Purple
+      { fill: 0xf72585, border: 0xfbcfe8, glow: 0xbe185d }, // Neon Rose
+      { fill: 0x4cc9f0, border: 0xcff4fc, glow: 0x0891b2 }  // Sky Aqua
+    ];
+
+    function initPixi() {
+      app = new PIXI.Application({
+        resizeTo: window,
+        backgroundColor: 0x070b19,
+        backgroundAlpha: 0, // Transparent to expose CSS aurora gradient
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true
+      });
+
+      container.appendChild(app.view);
+
+      // Render Stage Hierarchy
+      app.bgStage = new PIXI.Container();
+      app.rippleStage = new PIXI.Container();
+      app.bubbleStage = new PIXI.Container();
+      app.particleStage = new PIXI.Container();
+
+      app.stage.addChild(app.bgStage);
+      app.stage.addChild(app.rippleStage);
+      app.stage.addChild(app.bubbleStage);
+      app.stage.addChild(app.particleStage);
+
+      // Event Interactions
+      app.stage.eventMode = 'static';
+      app.stage.hitArea = app.screen;
+
+      app.stage.on('pointerdown', (e) => {
+        onPointerUpdate(e);
+        spawnWaterRipple(e.global.x, e.global.y);
+      });
+      app.stage.on('pointermove', onPointerUpdate);
+      app.stage.on('pointerup', onPointerEnd);
+      app.stage.on('pointerupoutside', onPointerEnd);
+
+      initAmbientStars();
+
+      // Main Physics Lifecycle Loop
+      app.ticker.add(updatePhysics);
+    }
+
+    // Ambient floating star micro-particles
+    function initAmbientStars() {
+      const count = Math.floor((window.innerWidth * window.innerHeight) / 10000);
+      const g = new PIXI.Graphics();
+      g.beginFill(0xffffff);
+      g.drawCircle(0, 0, 3);
+      g.endFill();
+      const texture = app.renderer.generateTexture(g);
+
+      for (let i = 0; i < count; i++) {
+        const star = new PIXI.Sprite(texture);
+        star.anchor.set(0.5);
+        star.x = Math.random() * app.screen.width;
+        star.y = Math.random() * app.screen.height;
+        star.scale.set(0.2 + Math.random() * 0.5);
+        star.alpha = 0.15 + Math.random() * 0.45;
+        star.tint = [0x6fffe9, 0xa5f3fc, 0xf0abfc, 0xffffff][Math.floor(Math.random() * 4)];
+
+        star.userData = {
+          speedY: 0.1 + Math.random() * 0.2,
+          pulsePhase: Math.random() * Math.PI * 2,
+          pulseSpeed: 0.01 + Math.random() * 0.02
+        };
+
+        app.bgStage.addChild(star);
+        backgroundStars.push(star);
+      }
+    }
+
+    // Tap / Click Water Ripple Effect
+    function spawnWaterRipple(x, y) {
+      const ripple = new PIXI.Graphics();
+      ripple.x = x;
+      ripple.y = y;
+      ripple.radius = 5;
+      ripple.maxRadius = 70 + Math.random() * 40;
+      ripple.alpha = 0.8;
+
+      app.rippleStage.addChild(ripple);
+      ripples.push(ripple);
+    }
+
+    function startAmbientTrackIfEnabled() {
+      if (!ambientTrack || audio.muted) return;
+
+      ambientTrack.volume = 0.25;
+      ambientTrack.muted = false;
+
+      const playAttempt = ambientTrack.play();
+      if (playAttempt && typeof playAttempt.catch === 'function') {
+        playAttempt.catch(() => {});
+      }
+    }
+
+    function onPointerUpdate(e) {
+      audio.init();
+      startAmbientTrackIfEnabled();
+      const pos = e.global;
+      if (touchState.px === -1000) {
+        touchState.px = pos.x;
+        touchState.py = pos.y;
+      } else {
+        touchState.px = touchState.x;
+        touchState.py = touchState.y;
+      }
+      touchState.x = pos.x;
+      touchState.y = pos.y;
+      touchState.vx = touchState.x - touchState.px;
+      touchState.vy = touchState.y - touchState.py;
+      touchState.active = true;
+    }
+
+    function onPointerEnd() {
+      touchState.active = false;
+      touchState.x = -1000;
+      touchState.y = -1000;
+    }
+
+    // Generate multi-tone bubble graphics
+    function createBubbleTexture(w, h, palette) {
+      const g = new PIXI.Graphics();
+      const rx = w / 2;
+      const ry = h / 2;
+
+      // Outer Aura Glow
+      g.beginFill(palette.glow, 0.2);
+      g.drawRoundedRect(-rx - 6, -ry - 6, w + 12, h + 12, (h + 12) / 2);
+      g.endFill();
+
+      // Glass Body
+      g.beginFill(palette.fill, 0.28);
+      g.lineStyle(2, palette.border, 0.7);
+      g.drawRoundedRect(-rx, -ry, w, h, ry);
+      g.endFill();
+
+      // Specular Top Highlight
+      g.lineStyle(2, 0xffffff, 0.75);
+      g.arc(-rx / 2, -ry + 8, Math.min(w, h) / 3, Math.PI * 1.15, Math.PI * 1.85);
+
+      return app.renderer.generateTexture(g);
+    }
+
+    // Spawn Bubble Instance
+    function spawnBubble(text, x, y) {
+      const bubble = new PIXI.Container();
+      bubble.x = x;
+      bubble.y = y;
+      bubble.textString = text;
+
+      const palette = BUBBLE_PALETTES[Math.floor(Math.random() * BUBBLE_PALETTES.length)];
+      bubble.palette = palette;
+
+      // Label Styling
+      const style = new PIXI.TextStyle({
+        fontFamily: 'Outfit',
+        fontSize: 15,
+        fontWeight: '500',
+        fill: '#ffffff',
+        align: 'center',
+        wordWrap: true,
+        wordWrapWidth: 160
+      });
+
+      const pixiText = new PIXI.Text(text, style);
+      pixiText.anchor.set(0.5);
+
+      const bounds = pixiText.getBounds();
+      const paddingX = 32;
+      const paddingY = 20;
+      const w = Math.max(60, bounds.width + paddingX);
+      const h = Math.max(60, bounds.height + paddingY);
+
+      bubble.radius = Math.max(w, h) / 2;
+      bubble.mass = bubble.radius / 18;
+
+      // Physics State
+      bubble.vx = (Math.random() - 0.5) * 3;
+      bubble.vy = -1.2 - Math.random() * 2.2;
+      bubble.floatPhase = Math.random() * Math.PI * 2;
+      bubble.pulseSpeed = 0.02 + Math.random() * 0.02;
+
+      // Texture Sprite
+      const texture = createBubbleTexture(w, h, palette);
+      const sprite = new PIXI.Sprite(texture);
+      sprite.anchor.set(0.5);
+
+      bubble.addChild(sprite);
+      bubble.addChild(pixiText);
+
+      // Intro Spring Scale
+      bubble.scale.set(0);
+      bubble.targetScale = 1;
+
+      // Event Listeners
+      bubble.eventMode = 'static';
+      bubble.cursor = 'pointer';
+      bubble.on('pointerdown', (e) => {
+        e.stopPropagation();
+        popBubble(bubble);
+      });
+
+      app.bubbleStage.addChild(bubble);
+      bubbles.push(bubble);
+    }
+
+    // Particle Pop Shockwave Burst
+    function popBubble(bubble) {
+      audio.playPopChime();
+
+      const x = bubble.x;
+      const y = bubble.y;
+      const palette = bubble.palette;
+
+      // 1. Expanding Shockwave Ring
+      const shockwave = new PIXI.Graphics();
+      shockwave.x = x;
+      shockwave.y = y;
+      shockwave.radius = 10;
+      shockwave.maxRadius = bubble.radius * 2.2;
+      shockwave.color = palette.border;
+      shockwave.alpha = 1;
+      app.particleStage.addChild(shockwave);
+      particles.push({ type: 'ring', gfx: shockwave });
+
+      // 2. Sparkling Micro-particles
+      const sparkCount = 14 + Math.floor(bubble.radius / 3);
+      for (let i = 0; i < sparkCount; i++) {
+        const spark = new PIXI.Graphics();
+        const pSize = 2 + Math.random() * 4;
+        spark.beginFill(palette.border, 0.95);
+        spark.drawCircle(0, 0, pSize);
+        spark.endFill();
+
+        spark.x = x;
+        spark.y = y;
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2.5 + Math.random() * 7;
+        
+        particles.push({
+          type: 'spark',
+          gfx: spark,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1,
+          decay: 0.02 + Math.random() * 0.03
+        });
+
+        app.particleStage.addChild(spark);
+      }
+
+      // Remove bubble from scene
+      const idx = bubbles.indexOf(bubble);
+      if (idx > -1) bubbles.splice(idx, 1);
+      app.bubbleStage.removeChild(bubble);
+      bubble.destroy({ children: true });
+    }
+
+    // Main Physics Loop
+    function updatePhysics(delta) {
+      const w = app.screen.width;
+      const h = app.screen.height;
+
+      // 1. Update Ambient Stars
+      backgroundStars.forEach(star => {
+        star.y -= star.userData.speedY * delta;
+        star.userData.pulsePhase += star.userData.pulseSpeed * delta;
+        star.alpha = 0.2 + Math.sin(star.userData.pulsePhase) * 0.25;
+
+        if (star.y < -10) {
+          star.y = h + 10;
+          star.x = Math.random() * w;
+        }
+      });
+
+      // 2. Update Water Ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const r = ripples[i];
+        r.radius += 2.5 * delta;
+        r.alpha -= 0.025 * delta;
+
+        r.clear();
+        r.lineStyle(2, 0x6fffe9, r.alpha);
+        r.drawCircle(0, 0, r.radius);
+
+        if (r.alpha <= 0 || r.radius >= r.maxRadius) {
+          app.rippleStage.removeChild(r);
+          r.destroy();
+          ripples.splice(i, 1);
+        }
+      }
+
+      // 3. Update Pop Particles & Shockwaves
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+
+        if (p.type === 'ring') {
+          p.gfx.radius += 4 * delta;
+          p.gfx.alpha -= 0.04 * delta;
+
+          p.gfx.clear();
+          p.gfx.lineStyle(3, p.gfx.color, Math.max(0, p.gfx.alpha));
+          p.gfx.drawCircle(0, 0, p.gfx.radius);
+
+          if (p.gfx.alpha <= 0) {
+            app.particleStage.removeChild(p.gfx);
+            p.gfx.destroy();
+            particles.splice(i, 1);
+          }
+        } else if (p.type === 'spark') {
+          p.gfx.x += p.vx * delta;
+          p.gfx.y += p.vy * delta;
+          p.vx *= 0.95;
+          p.vy *= 0.95;
+          p.gfx.alpha -= p.decay * delta;
+
+          if (p.gfx.alpha <= 0) {
+            app.particleStage.removeChild(p.gfx);
+            p.gfx.destroy();
+            particles.splice(i, 1);
+          }
+        }
+      }
+
+      // 4. Update Sensory Floating Bubbles
+      for (let i = 0; i < bubbles.length; i++) {
+        const b = bubbles[i];
+
+        // Intro spring bounce scale
+        if (b.scale.x < b.targetScale) {
+          b.scale.x += 0.06 * delta;
+          b.scale.y += 0.06 * delta;
+        }
+
+        // Breathing / Pulsing Oscillations
+        b.floatPhase += b.pulseSpeed * delta;
+        const breath = Math.sin(b.floatPhase) * 0.04;
+        b.scale.set(b.targetScale + breath);
+
+        // Buoyancy & Brownian drift
+        b.vy -= 0.035 * delta;
+        b.vx += Math.sin(b.floatPhase) * 0.06;
+
+        // Pointer Magnetic Repulsion
+        if (touchState.active) {
+          const dx = b.x - touchState.x;
+          const dy = b.y - touchState.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const pushRadius = b.radius + 100;
+
+          if (dist < pushRadius && dist > 0) {
+            const force = (1 - dist / pushRadius) * 3;
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            b.vx += nx * force + touchState.vx * 0.12;
+            b.vy += ny * force + touchState.vy * 0.12;
+          }
+        }
+
+        // Apply friction & movement
+        b.vx *= 0.98;
+        b.vy *= 0.98;
+        b.x += b.vx * delta;
+        b.y += b.vy * delta;
+
+        // Screen Boundary Bouncing
+        if (b.x - b.radius < 0) {
+          b.x = b.radius;
+          b.vx *= -0.7;
+        } else if (b.x + b.radius > w) {
+          b.x = w - b.radius;
+          b.vx *= -0.7;
+        }
+
+        // Vertical screen wrap
+        if (b.y + b.radius < -30) {
+          b.y = h + b.radius + 10;
+          b.x = Math.random() * (w - b.radius * 2) + b.radius;
+        }
+      }
+
+      // 5. Bubble-to-Bubble Soft Collision Repulsion
+      for (let i = 0; i < bubbles.length; i++) {
+        for (let j = i + 1; j < bubbles.length; j++) {
+          const b1 = bubbles[i];
+          const b2 = bubbles[j];
+
+          const dx = b2.x - b1.x;
+          const dy = b2.y - b1.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const minDist = b1.radius + b2.radius + 12;
+
+          if (dist < minDist && dist > 0) {
+            const overlap = minDist - dist;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            const push = overlap * 0.04;
+
+            b1.vx -= nx * push;
+            b1.vy -= ny * push;
+            b2.vx += nx * push;
+            b2.vy += ny * push;
+          }
+        }
+      }
+    }
+
+    // Parse thoughts into sensory word tokens
+    function parseThoughts(text) {
+      if (!text.trim()) {
+        return ["Stress", "Overthinking", "Restlessness", "Anxiety", "Tension", "Peace", "Calm", "Serenity", "Breathe"];
+      }
+
+      const rawTokens = text.split(/[\n,;.!?]+/);
+      let tokens = [];
+
+      rawTokens.forEach(token => {
+        const words = token.trim().split(/\s+/);
+        if (words.length > 4) {
+          for (let i = 0; i < words.length; i += 3) {
+            tokens.push(words.slice(i, i + 3).join(" "));
+          }
+        } else if (token.trim().length > 0) {
+          tokens.push(token.trim());
+        }
+      });
+
+      return tokens.length > 0 ? tokens : ["Breathe in", "Let go", "Tranquility"];
+    }
+
+    // Release Action Flow
+    function releaseThoughts() {
+      audio.init();
+      startAmbientTrackIfEnabled();
+      audio.playReleaseSwell();
+
+      const text = thoughtInput.value;
+      const items = parseThoughts(text);
+
+      // Transition UI Out
+      uiCard.classList.add('hidden');
+
+      setTimeout(() => {
+        resetBtn.classList.add('visible');
+        hintToast.classList.add('visible');
+      }, 500);
+
+      // Staggered Spawn Sequence
+      const startX = app.screen.width / 2;
+      const startY = app.screen.height / 2 + 80;
+
+      items.forEach((itemText, index) => {
+        setTimeout(() => {
+          const offsetX = (Math.random() - 0.5) * Math.min(app.screen.width * 0.65, 400);
+          const offsetY = (Math.random() - 0.5) * 120;
+          spawnBubble(itemText, startX + offsetX, startY + offsetY);
+        }, index * 110);
+      });
+
+      thoughtInput.value = '';
+    }
+
+    // Reset Flow
+    function resetThoughtInput() {
+      uiCard.classList.remove('hidden');
+      resetBtn.classList.remove('visible');
+      hintToast.classList.remove('visible');
+      setTimeout(() => thoughtInput.focus(), 300);
+    }
+
+    // Event Listeners
+    releaseBtn.addEventListener('click', releaseThoughts);
+    resetBtn.addEventListener('click', resetThoughtInput);
+
+    audioToggle.addEventListener('click', () => {
+      audio.init();
+      audio.muted = !audio.muted;
+
+      if (ambientTrack) {
+        ambientTrack.muted = audio.muted;
+        if (!audio.muted) {
+          startAmbientTrackIfEnabled();
+        } else {
+          ambientTrack.pause();
+        }
+      }
+
+      audioToggle.style.opacity = audio.muted ? '0.4' : '1';
+    });
+
+    thoughtInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        releaseThoughts();
+      }
+    });
+
+    // Boot App on Load
+    window.addEventListener('load', () => {
+      initPixi();
+    });
+  </script>
+</body>
+</html>
